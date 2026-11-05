@@ -1509,14 +1509,20 @@ export default function App() {
     setReasonPrompt({ message, onSubmit });
   }
 
-  function setPhysicalCount(stockId, count, reason) {
+  function setPhysicalCount(row, count, reason) {
     if (!requireLogin()) return;
-    const row = stock.find((r) => r.id === stockId);
     const newVal = count === "" ? null : Number(count);
-    const next = stock.map((r) => (r.id === stockId ? { ...r, physicalCount: newVal } : r));
+    let next;
+    const isVirtual = !row.id || String(row.id).startsWith("virtual|");
+    if (!isVirtual) {
+      next = stock.map((r) => (r.id === row.id ? { ...r, physicalCount: newVal } : r));
+    } else {
+      const newRow = { id: Date.now() + Math.random(), branch: row.branch, item: row.item, unit: row.unit, onHand: 0, openingStock: 0, reorderLevel: 20, physicalCount: newVal, status: "Low" };
+      next = [...stock, newRow];
+    }
     setStock(next);
     saveKey("stock", next);
-    if (row && row.physicalCount !== newVal) {
+    if (row.physicalCount !== newVal) {
       const oldText = row.physicalCount != null ? `${row.physicalCount} ${row.unit}` : "not counted";
       const newText = newVal != null ? `${newVal} ${row.unit}` : "cleared";
       logChange(`${row.item} (${row.branch}) physical count: ${oldText} → ${newText}${reason ? ` — Reason: ${reason}` : ""}`);
@@ -1908,7 +1914,7 @@ export default function App() {
                 onDelete={(name) => requestConfirm(`Remove "${name}" from Item Master? Existing purchase/stock/wastage history for it stays intact, but you won't be able to pick it in new entries.`, () => deleteItem(name))}
               />
             )}
-            {active === "stock" && <StockModule rows={fStock} onSetPhysicalCount={setPhysicalCount} items={items} itemCostMap={itemCostMap} purchases={purchases} indents={indents} onRequestReason={requestReason} />}
+            {active === "stock" && <StockModule rows={fStock} onSetPhysicalCount={setPhysicalCount} items={items} itemCostMap={itemCostMap} purchases={purchases} indents={indents} onRequestReason={requestReason} branch={branch} />}
             {active === "indent" && (
               <IndentModule rows={filterBranch(indents)} onAdd={addIndentEntry} onDelete={(row) => requestConfirm(`Delete Indent #${row.indentNo} — ${row.item} (${row.qty}${row.unit})? This will add the qty back to Stock.`, () => deleteIndentEntry(row))} items={items} itemCostMap={itemCostMap} restaurantName={restaurantName} />
             )}
@@ -2800,7 +2806,7 @@ function ItemMasterModule({ items, priceHistory, onUpdate, onAdd, onImport, onDe
 /* ---------------------------------------------------------
    STOCK MODULE
 --------------------------------------------------------- */
-function StockModule({ rows, onSetPhysicalCount, items, itemCostMap, purchases, indents, onRequestReason }) {
+function StockModule({ rows, onSetPhysicalCount, items, itemCostMap, purchases, indents, onRequestReason, branch }) {
   const itemDeptMap = useMemo(() => Object.fromEntries(items.map((i) => [i.name, i.department || "—"])), [items]);
 
   const purchasedQtyMap = useMemo(() => {
@@ -2815,7 +2821,28 @@ function StockModule({ rows, onSetPhysicalCount, items, itemCostMap, purchases, 
     return map;
   }, [indents]);
 
-  const enriched = rows.map((r) => {
+  // Every Item Master item should be visible here — even ones never purchased yet —
+  // not just whichever rows happen to already exist in the stock ledger.
+  const fullRows = useMemo(() => {
+    const branchesInScope = branch === "All Branches" ? BRANCHES.slice(1) : [branch];
+    const merged = [];
+    branchesInScope.forEach((br) => {
+      items.forEach((it) => {
+        const real = rows.find((r) => r.branch === br && r.item === it.name);
+        if (real) {
+          merged.push(real);
+        } else {
+          merged.push({
+            id: `virtual|${br}|${it.name}`, branch: br, item: it.name, unit: it.unit,
+            onHand: 0, openingStock: 0, reorderLevel: 20, physicalCount: null, status: "Low",
+          });
+        }
+      });
+    });
+    return merged;
+  }, [rows, items, branch]);
+
+  const enriched = fullRows.map((r) => {
     const key = r.branch + "|" + r.item;
     const totalPurchases = purchasedQtyMap[key] || 0;
     const totalIndented = indentedQtyMap[key] || 0;
@@ -2874,7 +2901,7 @@ function StockModule({ rows, onSetPhysicalCount, items, itemCostMap, purchases, 
                         if (newVal === r.physicalCount) return;
                         onRequestReason(
                           `${r.item} (${r.branch}): ${r.physicalCount ?? "not counted"} → ${e.target.value === "" ? "cleared" : e.target.value} ${r.unit}`,
-                          (reason) => onSetPhysicalCount(r.id, e.target.value, reason)
+                          (reason) => onSetPhysicalCount(r, e.target.value, reason)
                         );
                       }}
                       style={{ width: 72, textAlign: "right", border: `1px solid ${COLORS.line}`, borderRadius: 4, padding: "4px 6px", fontFamily: "'IBM Plex Mono', monospace", fontSize: 13.5 }}
