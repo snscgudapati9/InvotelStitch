@@ -1,0 +1,28 @@
+name: V2 build verification
+
+on:
+  push:
+    branches:
+      - v2-development
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout V2 branch
+        uses: actions/checkout@v4
+        with:
+          ref: v2-development
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies and sync lockfile
+        run: npm install
+      - name: Build V2
+        run: npm run build
