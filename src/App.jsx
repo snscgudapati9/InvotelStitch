@@ -1,3 +1,4 @@
+import ItemMasterCloud from "./ItemMasterCloud.jsx";
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -1904,16 +1905,7 @@ export default function App() {
                 items={items}
               />
             )}
-            {active === "itemmaster" && (
-              <ItemMasterModule
-                items={items}
-                priceHistory={priceHistory}
-                onUpdate={updateItem}
-                onAdd={addItem}
-                onImport={bulkImportItems}
-                onDelete={(name) => requestConfirm(`Remove "${name}" from Item Master? Existing purchase/stock/wastage history for it stays intact, but you won't be able to pick it in new entries.`, () => deleteItem(name))}
-              />
-            )}
+            {active === "itemmaster" && <ItemMasterCloud />}
             {active === "stock" && <StockModule rows={fStock} onSetPhysicalCount={setPhysicalCount} items={items} itemCostMap={itemCostMap} purchases={purchases} indents={indents} onRequestReason={requestReason} branch={branch} />}
             {active === "indent" && (
               <IndentModule rows={filterBranch(indents)} onAdd={addIndentEntry} onDelete={(row) => requestConfirm(`Delete Indent #${row.indentNo} — ${row.item} (${row.qty}${row.unit})? This will add the qty back to Stock.`, () => deleteIndentEntry(row))} items={items} itemCostMap={itemCostMap} restaurantName={restaurantName} />
