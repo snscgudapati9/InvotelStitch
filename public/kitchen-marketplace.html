@@ -80,6 +80,10 @@
           <p class="hint">No payment involved. Submitting creates a request only; stock is not deducted until Store issues the items and collection is confirmed.</p>
         </aside>
       </div>
+      <section class="panel" style="margin-top:16px">
+        <b>Collect items from Store</b><p class="meta">When Store marks your indent Ready, enter the one-time 6-digit PIN here to confirm collection.</p>
+        <div class="toolbar"><select id="readyIndent" class="field select"><option value="">No ready indents</option></select><input id="receiverName" class="field search" placeholder="Name of person collecting"/><input id="collectionPin" class="field" style="max-width:150px" inputmode="numeric" maxlength="6" placeholder="6-digit PIN"/><button id="collectNow" class="submit" style="width:auto;margin:0">Confirm collection</button></div>
+      </section>
     </section>
   </main>
   <script type="module">
@@ -102,6 +106,13 @@
       $("submit").disabled=!cart.size||!$("requester").value.trim();
     }
     function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+    async function loadReadyIndents(){
+      const {data:dept}=await supabase.from("departments").select("id").eq("department_name",selectedDepartment).eq("active_status","ACTIVE").maybeSingle();
+      if(!dept){$("readyIndent").innerHTML='<option value="">No ready indents</option>';return;}
+      const {data,error}=await supabase.from("indents").select("id,indent_number").eq("department_id",dept.id).eq("status","READY_FOR_COLLECTION").order("created_at",{ascending:false});
+      if(error){showMessage("Could not load ready indents: "+error.message);return;}
+      $("readyIndent").innerHTML='<option value="">Select ready indent</option>'+(data||[]).map(x=>'<option value="'+x.id+'">'+escapeHtml(x.indent_number)+'</option>').join("");
+    }
     async function loadItems(){
       hideMessage();$("catalogue").innerHTML='<div class="loading">Refreshing live Item Master…</div>';
       const {data:deptRows,error:deptLoadError}=await supabase.from("departments").select("id,department_name").eq("active_status","ACTIVE").order("department_name");
@@ -113,7 +124,7 @@
       const cats=[...new Set(items.map(i=>i.category).filter(Boolean))].sort();
       $("category").innerHTML='<option value="">All categories</option>'+cats.map(c=>'<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>').join("");
       $("chips").innerHTML=['All',...cats].map(c=>'<button class="chip '+(c==="All"?'active':'')+'" data-cat="'+escapeHtml(c==='All'?'':c)+'">'+escapeHtml(c)+'</button>').join("");
-      render();
+      render();await loadReadyIndents();
     }
     async function openSession(session){
       if(!session){$("auth").classList.remove("hidden");$("app").classList.add("hidden");return;}
@@ -128,6 +139,14 @@
     $("chips").addEventListener("click",e=>{const b=e.target.closest("[data-cat]");if(!b)return;$("category").value=b.dataset.cat;[...$("chips").children].forEach(x=>x.classList.toggle("active",x===b));render();});
     $("catalogue").addEventListener("click",e=>{const b=e.target.closest("[data-add]");if(!b)return;const i=items.find(x=>x.id===b.dataset.add);if(!i)return;const old=cart.get(i.id);cart.set(i.id,{...i,qty:(old?.qty||0)+1});render();});
     $("cartLines").addEventListener("click",e=>{const inc=e.target.closest("[data-inc]"),dec=e.target.closest("[data-dec]");const id=inc?.dataset.inc||dec?.dataset.dec;if(!id)return;const row=cart.get(id);if(!row)return;row.qty+=inc?1:-1;if(row.qty<=0)cart.delete(id);else cart.set(id,row);render();});
+    $("collectNow").addEventListener("click",async()=>{
+      const id=$("readyIndent").value,pin=$("collectionPin").value.trim(),receiver=$("receiverName").value.trim();
+      if(!id||!pin||!receiver){showMessage("Select a ready indent, enter receiver name and 6-digit PIN.");return;}
+      const {data,error}=await supabase.rpc("department_collect_indent",{p_indent_id:id,p_pin:pin,p_receiver_name:receiver});
+      if(error){showMessage(error.message);return;}
+      if(!data?.success){showMessage(data?.message||"PIN verification failed.");return;}
+      $("collectionPin").value="";$("receiverName").value="";showMessage("Collection confirmed: "+data.indent_number+". Received by "+data.receiver+".");await loadReadyIndents();
+    });
     $("submit").addEventListener("click",async()=>{
       if(!cart.size||!$("requester").value.trim())return;
       $("submit").disabled=true;$("submit").textContent="Submitting…";hideMessage();
