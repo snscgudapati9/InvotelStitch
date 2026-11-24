@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - name: Install dependencies and sync lockfile
-        run: npm install
+      - name: Install locked dependencies
+        run: npm ci
       - name: Build V2
         run: npm run build
