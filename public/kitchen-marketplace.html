@@ -91,7 +91,7 @@
     const supabase = createClient("https://oirbxzjgsnbnzociqzqq.supabase.co","sb_publishable_vv7BpWcPWjyfvITf9oJRFw_MGel_5B4",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     const OWNER = "saichandgudapati@gmail.com";
     const $ = (id) => document.getElementById(id);
-    let items=[], cart=new Map(), departments=[], selectedDepartment="Kitchen";
+    let items=[], cart=new Map(), departments=[], selectedDepartment="Kitchen", readySeen=null;
     function showMessage(message){$("message").textContent=message;$("message").classList.remove("hidden");}
     function hideMessage(){$("message").classList.add("hidden");}
     function money(v){return new Intl.NumberFormat("en-IN",{maximumFractionDigits:2}).format(v||0);}
@@ -111,7 +111,10 @@
       if(!dept){$("readyIndent").innerHTML='<option value="">No ready indents</option>';return;}
       const {data,error}=await supabase.from("indents").select("id,indent_number").eq("department_id",dept.id).eq("status","READY_FOR_COLLECTION").order("created_at",{ascending:false});
       if(error){showMessage("Could not load ready indents: "+error.message);return;}
-      $("readyIndent").innerHTML='<option value="">Select ready indent</option>'+(data||[]).map(x=>'<option value="'+x.id+'">'+escapeHtml(x.indent_number)+'</option>').join("");
+      const readyRows=data||[], currentIds=new Set(readyRows.map(x=>x.id));
+      if(readySeen!==null){const fresh=readyRows.filter(x=>!readySeen.has(x.id));if(fresh.length)showMessage("Store update: "+fresh.map(x=>x.indent_number).join(", ")+" is ready. Please collect from Store using your 6-digit PIN.");}
+      readySeen=currentIds;
+      $("readyIndent").innerHTML='<option value="">Select ready indent</option>'+readyRows.map(x=>'<option value="'+x.id+'">'+escapeHtml(x.indent_number)+'</option>').join("");
     }
     async function loadItems(){
       hideMessage();$("catalogue").innerHTML='<div class="loading">Refreshing live Item Master…</div>';
@@ -135,7 +138,7 @@
     $("signOut").addEventListener("click",async()=>{await supabase.auth.signOut();cart.clear();await openSession(null);});
     $("refresh").addEventListener("click",loadItems);
     $("search").addEventListener("input",render);$("category").addEventListener("change",render);$("requester").addEventListener("input",render);
-    $("department").addEventListener("change",async()=>{selectedDepartment=$("department").value;cart.clear();$("search").value="";await loadItems();});
+    $("department").addEventListener("change",async()=>{selectedDepartment=$("department").value;cart.clear();readySeen=null;$("search").value="";await loadItems();});
     $("chips").addEventListener("click",e=>{const b=e.target.closest("[data-cat]");if(!b)return;$("category").value=b.dataset.cat;[...$("chips").children].forEach(x=>x.classList.toggle("active",x===b));render();});
     $("catalogue").addEventListener("click",e=>{const b=e.target.closest("[data-add]");if(!b)return;const i=items.find(x=>x.id===b.dataset.add);if(!i)return;const old=cart.get(i.id);cart.set(i.id,{...i,qty:(old?.qty||0)+1});render();});
     $("cartLines").addEventListener("click",e=>{const inc=e.target.closest("[data-inc]"),dec=e.target.closest("[data-dec]");const id=inc?.dataset.inc||dec?.dataset.dec;if(!id)return;const row=cart.get(id);if(!row)return;row.qty+=inc?1:-1;if(row.qty<=0)cart.delete(id);else cart.set(id,row);render();});
@@ -158,7 +161,7 @@
       cart.clear();$("notes").value="";$("submit").textContent="Submit indent to Store";showMessage("Indent submitted successfully. Reference: "+data+". Store will process the request.");render();
     });
     supabase.auth.onAuthStateChange((_event,session)=>{openSession(session);});
-    const {data:{session}}=await supabase.auth.getSession();await openSession(session);
+    const {data:{session}}=await supabase.auth.getSession();await openSession(session);setInterval(()=>{if(!$("app").classList.contains("hidden"))loadReadyIndents();},30000);
   </script>
 </body>
 </html>
