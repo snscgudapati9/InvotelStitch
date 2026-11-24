@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#29231f" />
+  <title>Kitchen Store Marketplace · InvotelStitch</title>
+  <style>
+    :root{--paper:#faf6ef;--white:#fffdf9;--ink:#29231f;--muted:#756b61;--line:#e5dbce;--red:#963d30;--sage:#5d795e;--gold:#c18a2d;--soft:#f1e9de}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+    button,input,select,textarea{font:inherit}button{cursor:pointer}.shell{max-width:1240px;margin:auto;padding:22px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}
+    .brand{font-weight:850;letter-spacing:.12em;font-size:13px;color:var(--red)}.brand small{display:block;color:var(--muted);font-weight:500;letter-spacing:.02em;margin-top:4px}
+    h1{font-size:clamp(25px,4vw,38px);line-height:1.1;margin:7px 0}.sub{color:var(--muted);margin:0}
+    .layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+    .panel{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.field{border:1px solid var(--line);border-radius:9px;background:#fff;padding:11px 12px;color:var(--ink);min-width:0}
+    .search{flex:1 1 240px}.select{flex:0 1 190px}
+    .chips{display:flex;gap:8px;overflow:auto;padding:2px 0 13px}.chip{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;color:var(--muted)}
+    .chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+    .item{border:1px solid var(--line);background:#fff;border-radius:12px;padding:13px;display:flex;flex-direction:column;min-height:154px}
+    .item .cat{font-size:11px;color:var(--red);font-weight:750;text-transform:uppercase;letter-spacing:.08em}
+    .item h3{font-size:15px;margin:8px 0 4px;line-height:1.3}.meta{color:var(--muted);font-size:12px}
+    .item-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:14px}
+    .unit{font-size:12px;color:var(--muted)}.add{border:0;background:var(--red);color:white;border-radius:8px;padding:8px 11px;font-weight:700}
+    .cart{position:sticky;top:16px}.cart-head{display:flex;align-items:center;justify-content:space-between}.count{background:var(--soft);border-radius:20px;padding:3px 9px;font-size:12px;font-weight:750}
+    .cart-empty{padding:30px 10px;text-align:center;color:var(--muted)}.cart-line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:13px 0;border-bottom:1px solid var(--line)}
+    .cart-line strong{display:block;font-size:14px}.cart-line small{color:var(--muted)}
+    .qty{display:flex;align-items:center;gap:8px}.qty button{width:27px;height:27px;border:1px solid var(--line);background:white;border-radius:7px}
+    .notes{width:100%;min-height:72px;resize:vertical;margin-top:12px}
+    .submit{width:100%;background:var(--sage);color:white;border:0;border-radius:9px;padding:12px;font-weight:800;margin-top:12px}
+    .submit:disabled{opacity:.45;cursor:not-allowed}.hint{font-size:12px;color:var(--muted);margin:10px 0 0}
+    .status{margin:12px 0;padding:11px 13px;border-radius:9px;background:var(--soft);color:var(--ink);font-size:13px}
+    .hidden{display:none!important}.auth{max-width:430px;margin:9vh auto}.auth form{display:grid;gap:12px}.primary{background:var(--red);color:#fff;border:0;border-radius:9px;padding:12px;font-weight:750}
+    .loading{padding:40px;text-align:center;color:var(--muted)}.empty{padding:36px;text-align:center;color:var(--muted);grid-column:1/-1}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}.cart{position:static;order:-1}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:520px){.shell{padding:14px}.grid{grid-template-columns:1fr 1fr;gap:8px}.panel{padding:13px}.item{padding:10px;min-height:150px}.item h3{font-size:13px}.item .cat{font-size:10px}.item-foot{align-items:flex-end;flex-direction:column}.add{width:100%}header{align-items:flex-start}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section id="auth" class="panel auth hidden">
+      <div class="brand">INVOTELSTITCH <small>TANAH KITCHEN & BAR · INTERNAL STORE</small></div>
+      <h1>Kitchen Marketplace</h1>
+      <p class="sub">Sign in with the approved owner account to open the catalogue. Staff access will be enabled after individual department accounts are configured.</p>
+      <form id="loginForm">
+        <input id="email" class="field" type="email" value="saichandgudapati@gmail.com" required />
+        <button class="primary" type="submit">Send secure sign-in link</button>
+      </form>
+      <div id="authMessage" class="status hidden"></div>
+    </section>
+    <section id="app" class="hidden">
+      <header>
+        <div><div class="brand">INVOTELSTITCH <small>TANAH KITCHEN & BAR · INTERNAL STORE</small></div><h1>Kitchen Store Marketplace</h1><p class="sub">Browse the live Item Master and send your daily indent to Store.</p></div>
+        <button id="signOut" class="field">Sign out</button>
+      </header>
+      <div id="message" class="status hidden" role="status"></div>
+      <div class="layout">
+        <section>
+          <div class="panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b>Kitchen catalogue</b><div class="meta" id="itemCount">Loading active Item Master…</div></div><button id="refresh" class="field">Refresh</button></div>
+            <div class="toolbar">
+              <input id="search" class="field search" placeholder="Search item or category…" />
+              <select id="category" class="field select"><option value="">All categories</option></select>
+            </div>
+            <div id="chips" class="chips"></div>
+            <div id="catalogue" class="grid"><div class="loading">Loading catalogue…</div></div>
+          </div>
+        </section>
+        <aside class="panel cart">
+          <div class="cart-head"><b>Your indent cart</b><span class="count" id="cartCount">0 items</span></div>
+          <div id="cartLines" class="cart-empty">Your cart is empty.<br/>Add items from the catalogue.</div>
+          <label class="meta" for="requester" style="display:block;margin-top:12px">Requested by</label>
+          <input id="requester" class="field" style="width:100%;margin-top:5px" placeholder="Your name" />
+          <label class="meta" for="notes" style="display:block;margin-top:12px">Notes for Store (optional)</label>
+          <textarea id="notes" class="field notes" placeholder="Urgent items, preferred collection time…"></textarea>
+          <button id="submit" class="submit" disabled>Submit indent to Store</button>
+          <p class="hint">No payment involved. Submitting creates a request only; stock is not deducted until Store issues the items and collection is confirmed.</p>
+        </aside>
+      </div>
+    </section>
+  </main>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2.86.0";
+    const supabase = createClient("https://oirbxzjgsnbnzociqzqq.supabase.co","sb_publishable_vv7BpWcPWjyfvITf9oJRFw_MGel_5B4",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    const OWNER = "saichandgudapati@gmail.com";
+    const $ = (id) => document.getElementById(id);
+    let items=[], cart=new Map(), activeCategory="";
+    function showMessage(message){$("message").textContent=message;$("message").classList.remove("hidden");}
+    function hideMessage(){$("message").classList.add("hidden");}
+    function money(v){return new Intl.NumberFormat("en-IN",{maximumFractionDigits:2}).format(v||0);}
+    function render(){
+      const term=$("search").value.trim().toLowerCase(), cat=$("category").value;
+      const rows=items.filter(i=>(!term||[i.item_name,i.item_code,i.category].some(v=>(v||"").toLowerCase().includes(term)))&&(!cat||i.category===cat));
+      $("itemCount").textContent=items.length+" active Kitchen items · live Item Master";
+      $("catalogue").innerHTML=rows.length?rows.map(i=>`<article class="item"><div class="cat">${escapeHtml(i.category||"Uncategorised")}</div><h3>${escapeHtml(i.item_name)}</h3><div class="meta">${escapeHtml(i.item_code||"Item")} · Unit: ${escapeHtml(i.unit||"—")}</div><div class="item-foot"><span class="unit">Request by ${escapeHtml(i.unit||"unit")}</span><button class="add" data-add="${i.id}">＋ Add</button></div></article>`).join(""):'<div class="empty">No matching Kitchen items found.</div>';
+      $("cartCount").textContent=[...cart.values()].reduce((s,x)=>s+x.qty,0)+" items";
+      $("cartLines").className=cart.size?"":"cart-empty";
+      $("cartLines").innerHTML=cart.size?[...cart.values()].map(x=>`<div class="cart-line"><div><strong>${escapeHtml(x.item_name)}</strong><small>${escapeHtml(x.unit||"")}</small></div><div class="qty"><button data-dec="${x.id}">−</button><b>${x.qty}</b><button data-inc="${x.id}">＋</button></div></div>`).join(""):'Your cart is empty.<br/>Add items from the catalogue.';
+      $("submit").disabled=!cart.size||!$("requester").value.trim();
+    }
+    function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+    async function loadItems(){
+      hideMessage();$("catalogue").innerHTML='<div class="loading">Refreshing live Item Master…</div>';
+      const {data,error}=await supabase.from("items").select("id,item_code,item_name,department,category,unit,active_status").eq("active_status","ACTIVE").ilike("department","Kitchen").order("category").order("item_name").limit(1000);
+      if(error){showMessage("Could not load Item Master: "+error.message);$("catalogue").innerHTML='<div class="empty">Catalogue unavailable. Check your account access.</div>';return;}
+      items=data||[];
+      const cats=[...new Set(items.map(i=>i.category).filter(Boolean))].sort();
+      $("category").innerHTML='<option value="">All categories</option>'+cats.map(c=>'<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>').join("");
+      $("chips").innerHTML=['All',...cats].map(c=>'<button class="chip '+(c==="All"?'active':'')+'" data-cat="'+escapeHtml(c==='All'?'':c)+'">'+escapeHtml(c)+'</button>').join("");
+      render();
+    }
+    async function openSession(session){
+      if(!session){$("auth").classList.remove("hidden");$("app").classList.add("hidden");return;}
+      if((session.user.email||"").toLowerCase()!==OWNER){await supabase.auth.signOut();$("authMessage").textContent="This first build is restricted to the approved owner account. Department staff accounts are not configured yet.";$("authMessage").classList.remove("hidden");$("auth").classList.remove("hidden");return;}
+      $("auth").classList.add("hidden");$("app").classList.remove("hidden");await loadItems();
+    }
+    $("loginForm").addEventListener("submit",async e=>{e.preventDefault();const email=$("email").value.trim().toLowerCase();if(email!==OWNER){$("authMessage").textContent="Only the approved owner account can sign in in this first build.";$("authMessage").classList.remove("hidden");return;}const {error}=await supabase.auth.signInWithOtp({email:OWNER,options:{shouldCreateUser:false,emailRedirectTo:location.href}});$("authMessage").textContent=error?error.message:"Secure sign-in link sent. Open it on this device.";$("authMessage").classList.remove("hidden");});
+    $("signOut").addEventListener("click",async()=>{await supabase.auth.signOut();cart.clear();await openSession(null);});
+    $("refresh").addEventListener("click",loadItems);
+    $("search").addEventListener("input",render);$("category").addEventListener("change",render);$("requester").addEventListener("input",render);
+    $("chips").addEventListener("click",e=>{const b=e.target.closest("[data-cat]");if(!b)return;$("category").value=b.dataset.cat;[...$("chips").children].forEach(x=>x.classList.toggle("active",x===b));render();});
+    $("catalogue").addEventListener("click",e=>{const b=e.target.closest("[data-add]");if(!b)return;const i=items.find(x=>x.id===b.dataset.add);if(!i)return;const old=cart.get(i.id);cart.set(i.id,{...i,qty:(old?.qty||0)+1});render();});
+    $("cartLines").addEventListener("click",e=>{const inc=e.target.closest("[data-inc]"),dec=e.target.closest("[data-dec]");const id=inc?.dataset.inc||dec?.dataset.dec;if(!id)return;const row=cart.get(id);if(!row)return;row.qty+=inc?1:-1;if(row.qty<=0)cart.delete(id);else cart.set(id,row);render();});
+    $("submit").addEventListener("click",async()=>{
+      if(!cart.size||!$("requester").value.trim())return;
+      $("submit").disabled=true;$("submit").textContent="Submitting…";hideMessage();
+      const department=items.find(i=>i.department?.toLowerCase()==="kitchen");
+      const {data:dept,error:deptError}=await supabase.from("departments").select("id").eq("department_name","Kitchen").eq("active_status","ACTIVE").single();
+      if(deptError||!dept){showMessage("Kitchen department setup could not be verified: "+(deptError?.message||"not found"));$("submit").textContent="Submit indent to Store";render();return;}
+      const lines=[...cart.values()].map(i=>({item_id:i.id,quantity:i.qty}));
+      const {data,error}=await supabase.rpc("submit_department_indent",{p_department_id:dept.id,p_lines:lines,p_requested_by:$("requester").value.trim(),p_notes:$("notes").value.trim()||null});
+      if(error){showMessage("Indent was not submitted: "+error.message);$("submit").textContent="Submit indent to Store";render();return;}
+      cart.clear();$("notes").value="";$("submit").textContent="Submit indent to Store";showMessage("Indent submitted successfully. Reference: "+data+". Store will process the request.");render();
+    });
+    supabase.auth.onAuthStateChange((_event,session)=>{openSession(session);});
+    const {data:{session}}=await supabase.auth.getSession();await openSession(session);
+  </script>
+</body>
+</html>
