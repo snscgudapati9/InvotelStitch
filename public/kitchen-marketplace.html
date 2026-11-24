@@ -61,6 +61,7 @@
           <div class="panel">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b>Kitchen catalogue</b><div class="meta" id="itemCount">Loading active Item Master…</div></div><button id="refresh" class="field">Refresh</button></div>
             <div class="toolbar">
+              <select id="department" class="field select"><option value="Kitchen">Kitchen</option></select>
               <input id="search" class="field search" placeholder="Search item or category…" />
               <select id="category" class="field select"><option value="">All categories</option></select>
             </div>
@@ -86,14 +87,14 @@
     const supabase = createClient("https://oirbxzjgsnbnzociqzqq.supabase.co","sb_publishable_vv7BpWcPWjyfvITf9oJRFw_MGel_5B4",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     const OWNER = "saichandgudapati@gmail.com";
     const $ = (id) => document.getElementById(id);
-    let items=[], cart=new Map(), activeCategory="";
+    let items=[], cart=new Map(), departments=[], selectedDepartment="Kitchen";
     function showMessage(message){$("message").textContent=message;$("message").classList.remove("hidden");}
     function hideMessage(){$("message").classList.add("hidden");}
     function money(v){return new Intl.NumberFormat("en-IN",{maximumFractionDigits:2}).format(v||0);}
     function render(){
       const term=$("search").value.trim().toLowerCase(), cat=$("category").value;
       const rows=items.filter(i=>(!term||[i.item_name,i.item_code,i.category].some(v=>(v||"").toLowerCase().includes(term)))&&(!cat||i.category===cat));
-      $("itemCount").textContent=items.length+" active Kitchen items · live Item Master";
+      $("itemCount").textContent=items.length+" active "+selectedDepartment+" items · live Item Master";
       $("catalogue").innerHTML=rows.length?rows.map(i=>`<article class="item"><div class="cat">${escapeHtml(i.category||"Uncategorised")}</div><h3>${escapeHtml(i.item_name)}</h3><div class="meta">${escapeHtml(i.item_code||"Item")} · Unit: ${escapeHtml(i.unit||"—")}</div><div class="item-foot"><span class="unit">Request by ${escapeHtml(i.unit||"unit")}</span><button class="add" data-add="${i.id}">＋ Add</button></div></article>`).join(""):'<div class="empty">No matching Kitchen items found.</div>';
       $("cartCount").textContent=[...cart.values()].reduce((s,x)=>s+x.qty,0)+" items";
       $("cartLines").className=cart.size?"":"cart-empty";
@@ -103,7 +104,10 @@
     function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
     async function loadItems(){
       hideMessage();$("catalogue").innerHTML='<div class="loading">Refreshing live Item Master…</div>';
-      const {data,error}=await supabase.from("items").select("id,item_code,item_name,department,category,unit,active_status").eq("active_status","ACTIVE").ilike("department","Kitchen").order("category").order("item_name").limit(1000);
+      const {data:deptRows,error:deptLoadError}=await supabase.from("departments").select("id,department_name").eq("active_status","ACTIVE").order("department_name");
+      if(deptLoadError){showMessage("Could not load departments: "+deptLoadError.message);return;}
+      departments=deptRows||[];$("department").innerHTML=departments.map(d=>'<option value="'+escapeHtml(d.department_name)+'">'+escapeHtml(d.department_name)+'</option>').join("");$("department").value=selectedDepartment;
+      const {data,error}=await supabase.from("items").select("id,item_code,item_name,department,category,unit,active_status").eq("active_status","ACTIVE").ilike("department",selectedDepartment).order("category").order("item_name").limit(1000);
       if(error){showMessage("Could not load Item Master: "+error.message);$("catalogue").innerHTML='<div class="empty">Catalogue unavailable. Check your account access.</div>';return;}
       items=data||[];
       const cats=[...new Set(items.map(i=>i.category).filter(Boolean))].sort();
@@ -120,14 +124,14 @@
     $("signOut").addEventListener("click",async()=>{await supabase.auth.signOut();cart.clear();await openSession(null);});
     $("refresh").addEventListener("click",loadItems);
     $("search").addEventListener("input",render);$("category").addEventListener("change",render);$("requester").addEventListener("input",render);
+    $("department").addEventListener("change",async()=>{selectedDepartment=$("department").value;cart.clear();$("search").value="";await loadItems();});
     $("chips").addEventListener("click",e=>{const b=e.target.closest("[data-cat]");if(!b)return;$("category").value=b.dataset.cat;[...$("chips").children].forEach(x=>x.classList.toggle("active",x===b));render();});
     $("catalogue").addEventListener("click",e=>{const b=e.target.closest("[data-add]");if(!b)return;const i=items.find(x=>x.id===b.dataset.add);if(!i)return;const old=cart.get(i.id);cart.set(i.id,{...i,qty:(old?.qty||0)+1});render();});
     $("cartLines").addEventListener("click",e=>{const inc=e.target.closest("[data-inc]"),dec=e.target.closest("[data-dec]");const id=inc?.dataset.inc||dec?.dataset.dec;if(!id)return;const row=cart.get(id);if(!row)return;row.qty+=inc?1:-1;if(row.qty<=0)cart.delete(id);else cart.set(id,row);render();});
     $("submit").addEventListener("click",async()=>{
       if(!cart.size||!$("requester").value.trim())return;
       $("submit").disabled=true;$("submit").textContent="Submitting…";hideMessage();
-      const department=items.find(i=>i.department?.toLowerCase()==="kitchen");
-      const {data:dept,error:deptError}=await supabase.from("departments").select("id").eq("department_name","Kitchen").eq("active_status","ACTIVE").single();
+      const {data:dept,error:deptError}=await supabase.from("departments").select("id").eq("department_name",selectedDepartment).eq("active_status","ACTIVE").single();
       if(deptError||!dept){showMessage("Kitchen department setup could not be verified: "+(deptError?.message||"not found"));$("submit").textContent="Submit indent to Store";render();return;}
       const lines=[...cart.values()].map(i=>({item_id:i.id,quantity:i.qty}));
       const {data,error}=await supabase.rpc("submit_department_indent",{p_department_id:dept.id,p_lines:lines,p_requested_by:$("requester").value.trim(),p_notes:$("notes").value.trim()||null});
