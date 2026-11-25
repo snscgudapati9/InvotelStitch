@@ -3,6 +3,34 @@
 <style>
 :root{--bg:#faf6ef;--paper:#fffdf9;--ink:#29231f;--muted:#756b61;--line:#e5dbce;--red:#963d30;--green:#5d795e;--soft:#f1e9de;--warn:#fff1d5}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}button,input{font:inherit}.wrap{max-width:1120px;margin:auto;padding:22px}.brand{font-size:12px;letter-spacing:.13em;font-weight:850;color:var(--red)}h1{font-size:30px;margin:5px 0}.muted{color:var(--muted);font-size:13px}.panel{background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:18px;margin:14px 0}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{border:1px solid var(--line);border-radius:8px;padding:10px;background:white;width:100%;margin-top:5px}.btn{border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:white;color:var(--ink);font-weight:700;cursor:pointer}.btn.primary{background:var(--green);border-color:var(--green);color:white}.btn:disabled{opacity:.5;cursor:not-allowed}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}.notice{padding:12px 14px;border-radius:9px;background:var(--soft);margin:10px 0;font-size:13px}.notice.warn{background:var(--warn)}.hidden{display:none!important}.stats{display:flex;gap:10px;flex-wrap:wrap}.stat{padding:10px 13px;border:1px solid var(--line);border-radius:9px;background:white}.stat b{display:block;font-size:20px}.tablewrap{overflow:auto;margin-top:12px}table{width:100%;border-collapse:collapse;min-width:760px;font-size:13px}th,td{text-align:left;padding:9px;border-bottom:1px solid var(--line)}th{background:var(--soft)}tr.bad td{background:#fff0ed}.ok{color:#386c40;font-weight:700}.badtext{color:var(--red);font-weight:700}.auth{max-width:420px;margin:10vh auto}.top{display:flex;justify-content:space-between;gap:12px;align-items:center}@media(max-width:650px){.wrap{padding:13px}.grid{grid-template-columns:1fr}h1{font-size:25px}.top{align-items:flex-start}}
+/* Modern inventory import workspace */
+:root{--bg:#f4f6fb;--paper:#fff;--ink:#182235;--muted:#68758a;--line:#e6eaf1;--red:#315efb;--green:#16845b;--soft:#edf2ff;--warn:#fff7e6}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+.wrap{max-width:1320px;padding:28px 30px}
+.top{padding:8px 0 22px;border-bottom:1px solid var(--line);margin-bottom:22px;align-items:center}
+.brand{color:#315efb;font-size:11px;letter-spacing:.12em}
+h1{font-size:30px;letter-spacing:-.04em;font-weight:750;color:#172033}
+h2{letter-spacing:-.025em}
+.muted{color:var(--muted)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 24px rgba(16,24,40,.045);padding:22px;margin:18px 0}
+.btn{border:1px solid var(--line);border-radius:10px;padding:10px 15px;background:#fff;color:#344054;font-weight:650;transition:.15s}
+.btn:hover{border-color:#b9c8ff;background:#f7f9ff}
+.btn.primary{background:#315efb;color:#fff;border-color:#315efb;box-shadow:0 4px 12px rgba(49,94,251,.16)}
+.btn:disabled{opacity:.48;cursor:not-allowed;box-shadow:none}
+.field{border:1px solid #dce2eb;border-radius:10px;padding:10px 12px;min-height:42px;background:#fff}
+.field:focus{outline:none;border-color:#7d98ff;box-shadow:0 0 0 3px rgba(49,94,251,.1)}
+.notice{background:#f0f5ff;border:1px solid #dfe8ff;border-radius:12px;padding:14px 16px}
+.notice.warn{background:#fff7e6;border-color:#f5e2b7;color:#805719}
+.stat{border:1px solid var(--line);border-radius:12px;background:#fff;padding:13px 16px;min-width:145px}
+.stat b{font-size:22px;letter-spacing:-.03em}
+.tablewrap{border:1px solid var(--line);border-radius:12px}
+table{font-size:13px}
+th{background:#f8f9fc;color:#667085;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+th,td{padding:11px 12px;border-bottom:1px solid #edf0f4}
+tr.bad td{background:#fff2f1}
+.auth{margin:9vh auto;max-width:440px}
+.auth h1{margin-top:12px}
+@media(max-width:650px){.wrap{padding:15px}.top{display:flex;flex-wrap:wrap;gap:12px}h1{font-size:25px}.panel{padding:16px}.stat{flex:1 1 130px}}
 </style></head><body><main class="wrap">
 <section id="auth" class="panel auth hidden"><div class="brand">INVOTELSTITCH · V2</div><h1>Opening Stock Import</h1><p class="muted">Owner-authorised stock opening workflow.</p><form id="login"><input id="email" class="field" type="email" value="saichandgudapati@gmail.com" required/><button class="btn primary" style="width:100%;margin-top:10px">Send secure sign-in link</button></form><div id="authMsg" class="notice hidden"></div></section>
 <section id="app" class="hidden"><header class="top"><div><div class="brand">INVOTELSTITCH · INVENTORY CONTROL</div><h1>Opening Stock Import</h1><div class="muted">Upload current physical stock, validate against Item Master, preview, then confirm posting.</div></div><button id="out" class="btn">Sign out</button></header>
