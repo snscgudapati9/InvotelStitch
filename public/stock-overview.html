@@ -13,8 +13,8 @@
 <script type="module">
 import{createClient}from"https://esm.sh/@supabase/supabase-js@2.86.0";
 const sb=createClient("https://oirbxzjgsnbnzociqzqq.supabase.co","sb_publishable_vv7BpWcPWjyfvITf9oJRFw_MGel_5B4",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-const OWNER="saichandchand@gmail.com"; // replaced below with approved owner address
-const OWNER_EMAIL="saichandchand@gmail.com";
+const OWNER="saichand@gmail.com"; // replaced below with approved owner address
+const OWNER_EMAIL="saichand@gmail.com";
 const $=id=>document.getElementById(id);let items=[],batches=[],reservations=[];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const n=v=>Number(v||0),fmt=v=>n(v).toLocaleString("en-IN",{maximumFractionDigits:3}),money=v=>"₹"+n(v).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
