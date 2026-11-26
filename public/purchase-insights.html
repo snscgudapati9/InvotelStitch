@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f4f6fb"><title>Purchase Insights · InvotelStitch</title>
+<style>
+:root{font-family:Inter,system-ui,sans-serif;color:#172033;background:#f4f6fb}*{box-sizing:border-box}body{margin:0}.wrap{max-width:1320px;margin:auto;padding:26px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}.brand{font-size:11px;font-weight:800;letter-spacing:.14em;color:#315efb}h1{font-size:29px;letter-spacing:-.04em;margin:5px 0}.muted,.small{color:#68758a;font-size:13px}.small{font-size:11px}.panel,.stat{background:white;border:1px solid #e6eaf1;border-radius:16px;box-shadow:0 8px 24px #10182808}.panel{padding:20px;margin-bottom:18px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.stat{padding:16px}.stat b{display:block;font-size:24px;margin-top:7px}.field,.btn{border:1px solid #dce2eb;border-radius:10px;background:white;padding:10px 12px;color:#172033;font:inherit}.field{min-height:42px;width:100%}.btn{font-weight:650;text-decoration:none;cursor:pointer}.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.toolbar .field{flex:1;min-width:220px}.tablewrap{overflow:auto;border:1px solid #e8ecf2;border-radius:12px;margin-top:14px}table{width:100%;min-width:780px;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:11px;border-bottom:1px solid #edf0f4}th{background:#f8f9fc;color:#667085;font-size:11px;text-transform:uppercase}tr:last-child td{border:0}.pill{font-size:11px;font-weight:750;padding:4px 9px;border-radius:99px;background:#eef2ff;color:#3151bd}.empty{padding:30px;text-align:center;color:#68758a}.note{padding:12px 14px;border:1px solid #dfe8ff;background:#f0f5ff;border-radius:12px;color:#43516a;font-size:13px;margin:12px 0}.error{background:#fff0f0;border-color:#ffd4d4;color:#a11}@media(max-width:760px){.wrap{padding:14px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:15px}h1{font-size:25px}}
+</style></head><body><main class="wrap">
+<header class="top"><div><div class="brand">INVOTELSTITCH · PROCUREMENT</div><h1>Purchase Insights</h1><div class="muted">Vendor-wise purchase history and latest unit-cost comparison</div></div><div class="toolbar"><a class="btn" href="./purchasing.html">Purchasing</a><a class="btn" href="./stock-overview.html">Stock Overview</a><a class="btn" href="./store-fulfilment.html">Store Fulfilment</a></div></header>
+<div id="auth" class="panel" hidden><b>Owner sign-in required</b><p class="muted">Sign in with the approved owner account from Purchasing first, then return here.</p><a class="btn" href="./purchasing.html">Open Purchasing</a></div>
+<section id="app" hidden><div class="note">Only POSTED goods receipts are included. Costs are compared on the recorded Item Master unit and include GST as recorded on each receipt. Draft receipts and manual vendor price lists are excluded.</div>
+<div class="stats"><div class="stat"><span class="muted">Posted receipts</span><b id="receipts">—</b></div><div class="stat"><span class="muted">Vendors purchased from</span><b id="vendors">—</b></div><div class="stat"><span class="muted">Distinct items purchased</span><b id="items">—</b></div><div class="stat"><span class="muted">Latest posted receipt</span><b id="latest" style="font-size:16px">—</b></div></div>
+<section class="panel"><h2>Latest price comparison</h2><div class="toolbar"><input id="search" class="field" placeholder="Search item name or code"><select id="vendorFilter" class="field"><option value="">All vendors</option></select><select id="sort" class="field"><option value="name">Sort: Item name</option><option value="price">Sort: Lowest latest cost</option><option value="date">Sort: Most recent purchase</option></select></div><div id="comparison" class="tablewrap"><div class="empty">Loading purchase data…</div></div></section>
+<section class="panel"><h2>Vendor purchase history</h2><div class="toolbar"><select id="historyVendor" class="field"><option value="">All vendors</option></select><input id="historySearch" class="field" placeholder="Filter by item, invoice or GRN"></div><div id="history" class="tablewrap"><div class="empty">Loading purchase history…</div></div></section></section>
+</main>
+<script type="module">
+import{createClient}from"https://esm.sh/@supabase/supabase-js@2.86.0";
+const sb=createClient("https://oirbxzjgsnbnzociqzqq.supabase.co","sb_publishable_vv7BpWcPWjyfvITf9oJRFw_MGel_5B4",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const OWNER="saichandgudapati@gmail.com",$=id=>document.getElementById(id);let rows=[],vendorNames={},user=null;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money=n=>"₹"+Number(n||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+function fmt(d){return d?new Date(d).toLocaleDateString("en-IN"):"—"}
+async function init(s){user=s?.user||null;if(!user||(user.email||"").toLowerCase()!==OWNER){$("auth").hidden=false;$("app").hidden=true;return}$("auth").hidden=true;$("app").hidden=false;await load()}
+async function load(){
+ const {data,error}=await sb.from("goods_receipt_lines").select("id,item_id,received_qty,purchase_uom,unit_cost_inc_tax,unit_cost_ex_tax,gst_rate,gst_treatment,expiry_date,batch_number,goods_receipts!inner(id,grn_number,invoice_number,invoice_date,received_at,status,vendor_id,vendors!inner(id,vendor_name)),items!inner(id,item_code,item_name,unit)").eq("goods_receipts.status","POSTED").order("created_at",{ascending:false}).limit(5000);
+ if(error){$("comparison").innerHTML='<div class="empty">'+esc(error.message)+'</div>';$("history").innerHTML='<div class="empty">Could not load receipt history.</div>';return}
+ rows=(data||[]).map(r=>({id:r.id,itemId:r.item_id,item:r.items||{},qty:Number(r.received_qty),unit:r.purchase_uom,cost:Number(r.unit_cost_inc_tax),costEx:Number(r.unit_cost_ex_tax),gst:Number(r.gst_rate),treatment:r.gst_treatment,receipt:r.goods_receipts||{},vendor:r.goods_receipts?.vendors||{}}));
+ rows=rows.filter(r=>r.item.item_name&&r.vendor.vendor_name);
+ vendorNames=Object.fromEntries([...new Map(rows.map(r=>[r.vendor.id,r.vendor.vendor_name]))]);
+ $("receipts").textContent=new Set(rows.map(r=>r.receipt.id)).size;
+ $("vendors").textContent=Object.keys(vendorNames).length;
+ $("items").textContent=new Set(rows.map(r=>r.itemId)).size;
+ $("latest").textContent=rows.length?fmt(rows.reduce((a,b)=>new Date(a.receipt.received_at)>new Date(b.receipt.received_at)?a:b).receipt.received_at):"—";
+ const opts=Object.entries(vendorNames).sort((a,b)=>a[1].localeCompare(b[1])).map(([id,n])=>'<option value="'+esc(id)+'">'+esc(n)+'</option>').join("");
+ $("vendorFilter").innerHTML='<option value="">All vendors</option>'+opts;$("historyVendor").innerHTML='<option value="">All vendors</option>'+opts;
+ render();
+}
+function latestByItem(){
+ const map=new Map();for(const r of rows){let a=map.get(r.itemId);if(!a){a={item:r.item,offers:[]};map.set(r.itemId,a)}const old=a.offers.find(x=>x.vendor.id===r.vendor.id);if(!old||new Date(r.receipt.received_at)>new Date(old.receipt.received_at)){if(old)a.offers.splice(a.offers.indexOf(old),1);a.offers.push(r)}}
+ return [...map.values()];
+}
+function renderComparison(){
+ const q=$("search").value.trim().toLowerCase(),vf=$("vendorFilter").value,sort=$("sort").value;
+ let a=latestByItem().filter(x=>(!q||((x.item.item_name+" "+(x.item.item_code||"")).toLowerCase().includes(q)))&&(!vf||x.offers.some(o=>o.vendor.id===vf)));
+ a.sort((x,y)=>sort==="price"?Math.min(...x.offers.map(o=>o.cost))-Math.min(...y.offers.map(o=>o.cost)):sort==="date"?new Date(Math.max(...y.offers.map(o=>new Date(o.receipt.received_at))))-new Date(Math.max(...x.offers.map(o=>new Date(o.receipt.received_at)))):x.item.item_name.localeCompare(y.item.item_name));
+ $("comparison").innerHTML=a.length?'<table><thead><tr><th>Item</th><th>Vendor</th><th>Latest cost / '+ 'unit</th><th>Receipt date</th><th>Invoice / GRN</th><th>GST</th></tr></thead><tbody>'+a.flatMap(x=>x.offers.filter(o=>!vf||o.vendor.id===vf).sort((p,q)=>p.cost-q.cost).map(o=>'<tr><td><b>'+esc(x.item.item_name)+'</b><div class="small">'+esc(x.item.item_code||"")+' · '+esc(x.item.unit||o.unit)+'</div></td><td>'+esc(o.vendor.vendor_name)+'</td><td><b>'+money(o.cost)+'</b></td><td>'+fmt(o.receipt.received_at)+'</td><td>'+esc(o.receipt.invoice_number||"—")+'<div class="small">'+esc(o.receipt.grn_number||"")+'</div></td><td>'+esc(o.gst)+'% '+esc(o.treatment)+'</td></tr>')).join("")+'</tbody></table>':'<div class="empty">No posted purchase records match this filter yet.</div>';
+}
+function renderHistory(){
+ const v=$("historyVendor").value,q=$("historySearch").value.trim().toLowerCase();
+ const a=rows.filter(r=>(!v||r.vendor.id===v)&&(!q||(r.item.item_name+" "+(r.item.item_code||"")+" "+(r.receipt.invoice_number||"")+" "+(r.receipt.grn_number||"")).toLowerCase().includes(q)));
+ $("history").innerHTML=a.length?'<table><thead><tr><th>Date</th><th>Vendor</th><th>Item</th><th>Qty</th><th>Unit cost incl. GST</th><th>Invoice / GRN</th><th>Batch / Expiry</th></tr></thead><tbody>'+a.map(r=>'<tr><td>'+fmt(r.receipt.received_at)+'</td><td>'+esc(r.vendor.vendor_name)+'</td><td><b>'+esc(r.item.item_name)+'</b><div class="small">'+esc(r.item.item_code||"")+'</div></td><td>'+r.qty.toLocaleString("en-IN")+' '+esc(r.unit)+'</td><td>'+money(r.cost)+'</td><td>'+esc(r.receipt.invoice_number||"—")+'<div class="small">'+esc(r.receipt.grn_number||"")+'</div></td><td>'+esc(r.receipt.batch_number||"—")+' / '+fmt(r.expiry_date)+'</td></tr>').join("")+'</tbody></table>':'<div class="empty">No posted purchases found.</div>';
+}
+function render(){renderComparison();renderHistory()}
+["search","vendorFilter","sort","historyVendor","historySearch"].forEach(id=>$(id).addEventListener("input",render));
+sb.auth.onAuthStateChange((_e,s)=>init(s));const {data:{session}}=await sb.auth.getSession();await init(session);
+</script></body></html>
