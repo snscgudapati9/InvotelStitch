@@ -19,7 +19,7 @@ const OWNER="saichandgudapati@gmail.com",$=id=>document.getElementById(id);let v
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const num=x=>Number(x||0),money=x=>"₹"+num(x).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
 function message(t,bad=false){$("msg").textContent=t;$("msg").classList.remove("hidden");$("msg").classList.toggle("error",bad)}
-function today(){return new Date().toISOString().slice(0,10)}
+function today(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")}
 async function load(){const [v,i,g]=await Promise.all([sb.from("vendors").select("*").order("vendor_name"),sb.from("items").select("id,item_code,item_name,unit,active_status").eq("active_status","ACTIVE").order("item_name"),sb.from("goods_receipts").select("id,grn_number,invoice_number,received_at,status,invoice_total,vendor_id").order("created_at",{ascending:false}).limit(100)]);
 if(v.error||i.error||g.error){message((v.error||i.error||g.error).message,true);return}vendors=v.data||[];items=i.data||[];window.receipts=g.data||[];renderVendors();renderVendorSelect();renderHistory();}
 function renderVendors(){$("vendorList").innerHTML=vendors.length?vendors.map(v=>'<div class="listrow"><div><b>'+esc(v.vendor_name)+'</b><div class="small">'+esc(v.phone||"No phone")+' · '+esc(v.gstin||"No GSTIN")+' · '+esc(v.payment_terms||"Terms not set")+'</div></div><span class="pill">'+esc(v.active_status)+'</span></div>').join(""):'<div class="empty">No vendors added yet.</div>'}
